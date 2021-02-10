@@ -45,7 +45,13 @@ const socketEvents = (socket: Socket, io: Adapter) => {
 
     socket.on('party:player:new', ({ id }: { id: string }) => {
         const room = findParty(id);
-        io.in(room?.id).emit('party:player:join', JSON.stringify(room));
+
+        if (!room) {
+            socket.emit('party:refused', JSON.stringify({ id }));
+            return;
+        }
+
+        io.in(room.id).emit('party:player:join', JSON.stringify(room));
     });
 
     /*
