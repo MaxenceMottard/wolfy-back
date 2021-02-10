@@ -4,7 +4,6 @@ import sockets from './socket';
 
 const app: Application = express();
 const server = app.listen(80, () => console.log('SERVER STARTED'));
-
 const io = require('socket.io')(server, { path: '/' });
 
 sockets(io);
