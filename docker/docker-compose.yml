@@ -1,0 +1,27 @@
+version: '3.1'
+
+services:
+  wolfy_api:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: wolfy_nodejs
+    restart: always
+    networks:
+      - reverse-proxy
+    env_file:
+      - ../.env
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.API_WOLFY.rule=Host(`wolfy.maxencemottard.com`)
+      - traefik.http.routers.API_WOLFY.entrypoints=http
+      - traefik.http.routers.API_WOLFY.middlewares=https-redirect@file
+      - traefik.http.routers.API_WOLFY-Https.rule=Host(`wolfy.maxencemottard.com`)
+      - traefik.http.routers.API_WOLFY-Https.entrypoints=https
+      - traefik.http.routers.API_WOLFY-Https.middlewares=security@file, compression@file
+      - traefik.http.routers.API_WOLFY-Https.tls=true
+      - traefik.http.routers.API_WOLFY-Https.tls.certresolver=letsencrypt
+
+networks:
+  reverse-proxy:
+    external: true

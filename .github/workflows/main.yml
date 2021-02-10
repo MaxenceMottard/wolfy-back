@@ -1,0 +1,34 @@
+name: SSH
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '**.md'
+jobs:
+
+  build:
+    name: Deploy on VPS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: rsync deployments
+        uses: burnett01/rsync-deployments@4.1
+        with:
+          switches: -avzr --delete --exclude=".env" --exclude="key.JWT" --exclude=".git/" --exclude=".github/" --include="" --filter=""
+          path: ./
+          remote_path: /root/wolfy-back/
+          remote_host: ${{ secrets.HOST }}
+          remote_port: ${{ secrets.PORT }}
+          remote_user: ${{ secrets.USERNAME }}
+          remote_key: ${{ secrets.SSH_KEY }}
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd ./wolfy-back;
+            docker-compose -f docker/docker-compose.yml up --build --force-recreate --detach;
