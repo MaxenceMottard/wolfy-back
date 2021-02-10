@@ -53,14 +53,6 @@ const socketEvents = (socket: Socket, io: Adapter) => {
 
         io.in(room.id).emit('party:player:join', JSON.stringify(room));
     });
-
-    /*
-    socket.on('rooms:list', () => {
-        socket.emit('rooms:list', JSON.stringify({
-            rooms: Object.keys(rooms),
-        }));
-    });
-    */
 };
 
 const sockets = (io: Adapter) => {
