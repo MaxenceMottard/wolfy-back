@@ -28,3 +28,13 @@ export const removeUserFromParty = (partyId: string, socketId: string): void => 
         delete parties[partyId];
     }
 };
+export const generateRandomPartyId = (): string => {
+    // @ts-ignore
+    const chars = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
+    // eslint-disable-next-line no-bitwise
+    const partyId = [...Array(6)].map(() => chars[Math.random() * chars.length | 0]).join('');
+
+    return !parties[partyId]
+        ? partyId
+        : generateRandomPartyId();
+};

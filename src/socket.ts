@@ -1,15 +1,14 @@
 // @ts-ignore
-import { Adapter, Room, Socket } from 'socket.io';
+import { Adapter, Socket } from 'socket.io';
 import {
-    findParty, findUserParties, Party, Player, removeUserFromParty, setParty,
+    findParty, findUserParties, generateRandomPartyId, Party, Player, removeUserFromParty, setParty,
 } from './services/party';
 
 const socketEvents = (socket: Socket, io: Adapter) => {
     const socketId = socket.id;
 
     socket.on('disconnect', () => {
-        const parties = findUserParties(socketId);
-        parties.forEach((party) => {
+        findUserParties(socketId).forEach((party) => {
             removeUserFromParty(party.id, socketId);
             io.in(party.id).emit('party:player:join', JSON.stringify(party));
         });
@@ -18,7 +17,7 @@ const socketEvents = (socket: Socket, io: Adapter) => {
     socket.emit('user:id', JSON.stringify({ userId: socketId }));
 
     socket.on('party:create', ({ username }: { username: string }) => {
-        const id = 'ABDECHBA';
+        const id = generateRandomPartyId();
         const host: Player = { username, id: socketId };
         const party: Party = {
             players: [host], host, id, isStarted: false,
