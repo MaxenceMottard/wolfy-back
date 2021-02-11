@@ -26,6 +26,12 @@ export const removeUserFromParty = (partyId: string, socketId: string): void => 
 
     if (party.players.length <= 0) {
         delete parties[partyId];
+        return;
+    }
+
+    if (party.host === player) {
+        // eslint-disable-next-line prefer-destructuring
+        party.host = party.players[0];
     }
 };
 export const generateRandomPartyId = (): string => {

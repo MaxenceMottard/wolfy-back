@@ -35,11 +35,16 @@ const socketEvents = (socket: Socket, io: Adapter) => {
 
         if (!party) {
             socket.emit('party:refused', JSON.stringify({ id }));
+            return;
+        }
+
+        if (party.host.id === socketId) {
+            io.in(party.id).emit('party:info', JSON.stringify(party));
         } else {
             party.players.push({ username, id: socketId });
 
             socket.join(id);
-            socket.emit('party:joined', JSON.stringify({ id }));
+            io.in(party.id).emit('party:info', JSON.stringify(party));
         }
     });
 
@@ -53,17 +58,6 @@ const socketEvents = (socket: Socket, io: Adapter) => {
         socket.leave(party.id);
         removeUserFromParty(party.id, socketId);
         io.in(party.id).emit('party:info', JSON.stringify(party));
-    });
-
-    socket.on('party:player:new', ({ id }: { id: string }) => {
-        const room = findParty(id);
-
-        if (!room) {
-            socket.emit('party:refused', JSON.stringify({ id }));
-            return;
-        }
-
-        io.in(room.id).emit('party:info', JSON.stringify(room));
     });
 };
 
