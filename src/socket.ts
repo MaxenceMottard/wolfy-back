@@ -10,7 +10,8 @@ const socketEvents = (socket: Socket, io: Adapter) => {
     socket.on('disconnect', () => {
         findUserParties(socketId).forEach((party) => {
             removeUserFromParty(party.id, socketId);
-            io.in(party.id).emit('party:player:join', JSON.stringify(party));
+            socket.leave(party.id);
+            io.in(party.id).emit('party:info', JSON.stringify(party));
         });
     });
 
@@ -51,7 +52,7 @@ const socketEvents = (socket: Socket, io: Adapter) => {
 
         socket.leave(party.id);
         removeUserFromParty(party.id, socketId);
-        io.in(party.id).emit('party:player:join', JSON.stringify(party));
+        io.in(party.id).emit('party:info', JSON.stringify(party));
     });
 
     socket.on('party:player:new', ({ id }: { id: string }) => {
@@ -62,7 +63,7 @@ const socketEvents = (socket: Socket, io: Adapter) => {
             return;
         }
 
-        io.in(room.id).emit('party:player:join', JSON.stringify(room));
+        io.in(room.id).emit('party:info', JSON.stringify(room));
     });
 };
 
