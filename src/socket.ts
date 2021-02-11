@@ -42,6 +42,18 @@ const socketEvents = (socket: Socket, io: Adapter) => {
         }
     });
 
+    socket.on('party:leave', ({ id }: { id: string }) => {
+        const party = findParty(id);
+
+        if (!party) {
+            return;
+        }
+
+        socket.leave(party.id);
+        removeUserFromParty(party.id, socketId);
+        io.in(party.id).emit('party:player:join', JSON.stringify(party));
+    });
+
     socket.on('party:player:new', ({ id }: { id: string }) => {
         const room = findParty(id);
 
@@ -54,7 +66,7 @@ const socketEvents = (socket: Socket, io: Adapter) => {
     });
 };
 
-const sockets = (io: Adapter) => {
+const sockets = (io: Adapter): void => {
     io.on('connection', (socket: Socket) => {
         socketEvents(socket, io);
     });
