@@ -4,20 +4,35 @@ import {
     findParty, findUserParties, generateRandomPartyId, Party, Player, removeUserFromParty, setParty,
 } from './services/party';
 
+enum EmitEvent {
+    userId = 'user:id',
+    partyJoined = 'party:joined',
+    partyRefused = 'party:refused',
+    partyInfo = 'party:info',
+}
+
+enum SubscribeEvent {
+    disconnect = 'disconnect',
+    connection = 'connection',
+    partyCreate = 'party:create',
+    partyJoin = 'party:join',
+    partyLeave = 'party:leave',
+}
+
 const socketEvents = (socket: Socket, io: Adapter) => {
     const socketId = socket.id;
 
-    socket.on('disconnect', () => {
+    socket.on(SubscribeEvent.disconnect, () => {
         findUserParties(socketId).forEach((party) => {
             removeUserFromParty(party.id, socketId);
             socket.leave(party.id);
-            io.in(party.id).emit('party:info', JSON.stringify(party));
+            io.in(party.id).emit(EmitEvent.partyInfo, JSON.stringify(party));
         });
     });
 
-    socket.emit('user:id', JSON.stringify({ userId: socketId }));
+    socket.emit(EmitEvent.userId, JSON.stringify({ userId: socketId }));
 
-    socket.on('party:create', ({ username }: { username: string }) => {
+    socket.on(SubscribeEvent.partyCreate, ({ username }: { username: string }) => {
         const id = generateRandomPartyId();
         const host: Player = { username, id: socketId };
         const party: Party = {
@@ -27,28 +42,28 @@ const socketEvents = (socket: Socket, io: Adapter) => {
         setParty(id, party);
 
         socket.join(id);
-        socket.emit('party:joined', JSON.stringify({ id }));
+        socket.emit(EmitEvent.partyJoined, JSON.stringify({ id }));
     });
 
-    socket.on('party:join', ({ username, id }: { username: string, id: string }) => {
+    socket.on(SubscribeEvent.partyJoin, ({ username, id }: { username: string, id: string }) => {
         const party = findParty(id);
 
         if (!party) {
-            socket.emit('party:refused', JSON.stringify({ id }));
+            socket.emit(EmitEvent.partyRefused, JSON.stringify({ id }));
+
             return;
         }
 
-        if (party.host.id === socketId) {
-            io.in(party.id).emit('party:info', JSON.stringify(party));
-        } else {
+        if (party.host.id !== socketId) {
             party.players.push({ username, id: socketId });
 
             socket.join(id);
-            io.in(party.id).emit('party:info', JSON.stringify(party));
         }
+
+        io.in(party.id).emit(EmitEvent.partyInfo, JSON.stringify(party));
     });
 
-    socket.on('party:leave', ({ id }: { id: string }) => {
+    socket.on(SubscribeEvent.partyLeave, ({ id }: { id: string }) => {
         const party = findParty(id);
 
         if (!party) {
@@ -57,12 +72,12 @@ const socketEvents = (socket: Socket, io: Adapter) => {
 
         socket.leave(party.id);
         removeUserFromParty(party.id, socketId);
-        io.in(party.id).emit('party:info', JSON.stringify(party));
+        io.in(party.id).emit(EmitEvent.partyInfo, JSON.stringify(party));
     });
 };
 
 const sockets = (io: Adapter): void => {
-    io.on('connection', (socket: Socket) => {
+    io.on(SubscribeEvent.connection, (socket: Socket) => {
         socketEvents(socket, io);
     });
 };
